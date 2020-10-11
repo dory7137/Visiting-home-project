@@ -1,4 +1,4 @@
-# Go-home-project
+# Visiting-home-project
 The aim of this project is to compare the statistics of the COVID-19 virus data in Ireland and Hungary. 
 In addition to comparing the data, a further aim of the project is to try to predict how the virus infection will be in the two countries based on the previous data. 
 The ultimate goal is to use this prediction to calculate when both countries will be on the green list (based on EU regulations), 
