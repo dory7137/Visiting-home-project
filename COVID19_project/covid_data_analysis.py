@@ -15,9 +15,9 @@ warnings.filterwarnings('ignore')
 #TODO: download the files
 
 #read files
-confirmed_cases=pd.read_csv("time_series_covid19_confirmed_global.csv")
-deaths_cases=pd.read_csv("time_series_covid19_deaths_global.csv")
-recovered_cases=pd.read_csv("time_series_covid19_recovered_global.csv")
+confirmed_cases=pd.read_csv("COVID19_project/time_series_covid19_confirmed_global.csv")
+deaths_cases=pd.read_csv("COVID19_project/time_series_covid19_deaths_global.csv")
+recovered_cases=pd.read_csv("COVID19_project/time_series_covid19_recovered_global.csv")
 #choose Ireland and Hungary
 confirmed_ie_hu=confirmed_cases[(confirmed_cases["Country/Region"]=="Ireland") | (confirmed_cases["Country/Region"]=="Hungary") ].reset_index(drop=True)
 deaths_ie_hu=deaths_cases[(deaths_cases["Country/Region"]=="Ireland") | (deaths_cases["Country/Region"]=="Hungary") ].reset_index(drop=True)
