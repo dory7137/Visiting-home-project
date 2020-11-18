@@ -5,7 +5,13 @@ The ultimate goal is to use this prediction to calculate when both countries wil
 so when the daily number of cases will be so low that anybody can travel normally between the two country without any further costs. 
 Or in other words: when would it be worth buying a plane ticket to visit our family.  
 
-For this I used the "JHU CSSE COVID-19 Data" url: https://github.com/CSSEGISandData/COVID-19.
+For this I used the "JHU CSSE COVID-19 Data" url: https://github.com/CSSEGISandData/COVID-19, 
+and these 3 articles and codes from towards data science: 
+https://towardsdatascience.com/infectious-disease-modelling-part-i-understanding-sir-28d60e29fdfc
+https://towardsdatascience.com/infectious-disease-modelling-beyond-the-basic-sir-model-216369c584c4
+https://towardsdatascience.com/infectious-disease-modelling-fit-your-model-to-coronavirus-data-2568e672dbc7
+
+
 
 STEPS: 
 
@@ -13,5 +19,6 @@ STEPS:
 2. Visualize these informations using matplotlib pyplot
 3. With a SIR model, try to predict the future numbers
 4. Used this prediction to calculate the "Green list" point for both country
+5. Write down the conclusion.
 
 
