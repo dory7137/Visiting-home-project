@@ -125,7 +125,7 @@ plt.subplots_adjust(wspace=0.2, hspace=0.5)
 #deaths
 data_plotter("cumulate",[2,2,1],all_data.Date, all_data.Hungary_D, all_data.Ireland_D, "Hungary and Ireland all deaths", "Deaths", ["Hungary", "Ireland"] )
 #recovered
-data_plotter("cumulate",[2,2,3],all_data.Date, all_data.Hungary_R, all_data.Ireland_R, "Hungary and Ireland all deaths", "Deaths", ["Hungary", "Ireland"] )
+data_plotter("cumulate",[2,2,3],all_data.Date, all_data.Hungary_R, all_data.Ireland_R, "Hungary and Ireland all recovered", "Recovered", ["Hungary", "Ireland"] )
 plt.show()
 
 #calculate daily data
