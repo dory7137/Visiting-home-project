@@ -196,169 +196,176 @@ plt.show()
 #SIR model because in this case the difference between E and I states doesn't count I use the SIR model instead of SEIR 
 # and I don't calculate with the ICU beds and invasive ventillators to simplify the solution 
 
-# gamma: how many days takes to recover
-gamma = 1.0/9.0
-# phi how many days takes to die
-phi = 1.0/18.0
-# alpha is the fatality rate
-alpha=2.3/10.0
+
+
 N_hungary=9700000
 N_ireland=4700000
 hungarian_green_list_limit=25.0 / hungarian_rate
 irish_green_list_limit=25.0 / irish_rate
-
-
  
-def data_fitting_SIR(country,N_country, green_list_limit, data_to_fit, outbreak_day, params_to_fit):
-    def deriv(y, t, beta, gamma, phi, alpha, N):
+class SIR_Fitting:
+
+    def __init__ (self, country, N_country, green_list_limit, data_to_fit, outbreak_day, params_to_fit):
+        self.country=country
+        self.N_country=N_country
+        self.green_list_limit=green_list_limit
+        self.data_to_fit=data_to_fit
+        self.outbreak_day=outbreak_day
+        self.params_to_fit=params_to_fit
+        # gamma: how many days takes to recover
+        self.gamma = 1.0/9.0
+        # phi how many days takes to die
+        self.phi = 1.0/18.0
+        # alpha is the fatality rate
+        self.alpha=2.3/10.0
+
+
+    def deriv(self, y, t, beta):
         S, I, R, D = y
-        dSdt = -beta(t) * I * S / N
-        dIdt = beta(t) * I * S/N - (gamma*(1-alpha)*I) - (phi*alpha*I)
-        dRdt = gamma * alpha * I
-        dDdt = phi * (1-alpha)*I
+        dSdt = -beta(t) * I * S / self.N_country
+        dIdt = beta(t) * I * S/ self.N_country - (self.gamma*(1-self.alpha)*I) - (self.phi*self.alpha*I)
+        dRdt = self.gamma * self.alpha * I
+        dDdt = self.phi * (1-self.alpha)*I
         return dSdt, dIdt,  dRdt, dDdt
 
-    def logistic_R_0(t, R_0_start, k, x0, R_0_end):
+    #R is the infection rate, to model its changes I use a logaritmic figure
+    def logistic_R_0(self, t, R_0_start, k, x0, R_0_end):
         return (R_0_start-R_0_end) / (1 + np.exp(-k*(-t+x0))) + R_0_end
-    
-    def Model(days, N, R_0_start, k, x0, R_0_end):
-        def beta(t):
-            return logistic_R_0(t, R_0_start, k, x0, R_0_end) * gamma
 
-        y0 = N-1.0, 1.0, 0.0, 0.0
+    #
+    def Model(self, days, R_0_start, k, x0, R_0_end):
+        def beta(t):
+            return self.logistic_R_0(t, R_0_start, k, x0, R_0_end) * self.gamma
+
+        y0 = self.N_country-1.0, 1.0, 0.0, 0.0
         t = np.linspace(0, days-1, days)
-        ret = odeint(deriv, y0, t, args=(beta, gamma, phi, alpha, N ))
+        ret = odeint(self.deriv, y0, t, args=(beta, ))
         S, I, R, D = ret.T
-        R_0_over_time = [beta(i)/gamma for i in range(len(t))]
+        R_0_over_time = [beta(i)/self.gamma for i in range(len(t))]
 
         return t, S, I, R, D, R_0_over_time
 
-    def plotter(t, S, I, R, D, R_0, x_ticks=None, country=""):
+    def plotter(self, t, S, I, R, D, R_0, x_ticks=None):
     
         f, ax = plt.subplots(1,1,figsize=(20,4))
         if x_ticks is None:
             ax.plot(t, I, 'r', alpha=0.7, linewidth=2, label='Infected')
-            #ax.plot(t, R, 'g', alpha=0.7, linewidth=2, label='Recovered')
-            #ax.plot(t, D, 'k', alpha=0.7, linewidth=2, label='Dead')
         else:
             ax.plot(x_ticks, I, 'r', alpha=0.7, linewidth=2, label='Infected')
-            #ax.plot(x_ticks, R, 'g', alpha=0.7, linewidth=2, label='Recovered')
-            #ax.plot(x_ticks, D, 'k', alpha=0.7, linewidth=2, label='Dead')
-
             ax.xaxis.set_major_locator(mdates.YearLocator())
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
             ax.xaxis.set_minor_locator(mdates.MonthLocator())
             f.autofmt_xdate()
 
-        
-        ax.title.set_text('The SIR-Model prediction of '+ country)
-        
+        ax.title.set_text('The SIR-Model prediction of '+ self.country)
         ax.grid(b=True, alpha=0.5)
         legend = ax.legend()
         legend.get_frame().set_alpha(0.5)
         for spine in ('top', 'right', 'bottom', 'left'):
             ax.spines[spine].set_visible(False)
-
         plt.show()
+
+
     #fitting the model
-    def fitter(x, R_0_start, k, x0, R_0_end):
-        #Model(days, N, R_0_start, k, x0, R_0_end)
-        ret = Model(days, N_country, R_0_start, k, x0, R_0_end)
-        # index=2 -> returns I
-        return ret[2][x]
+    def fitter(self,x, R_0_start, k, x0, R_0_end):
+            days = self.outbreak_day + len(self.data_to_fit)
+            ret = self.Model(days, R_0_start, k, x0, R_0_end)
+            # index=2 -> returns I
+            return ret[2][x]
 
-    fitting_data = data_to_fit
-    
-    outbreak_shift = outbreak_day
-    #form: {parameter: (initial guess, minimum value, max value)}
-    params_init_min_max = params_to_fit  
 
-    days = outbreak_shift + len(fitting_data)
-    if outbreak_shift >= 0:
-        y_data = np.concatenate((np.zeros(outbreak_shift), fitting_data))
-    else:
-        y_data = y_data[-outbreak_shift:]
+    def fitting_model(self):
 
-    x_data = np.linspace(0, days - 1, days, dtype=int)  # x_data is just [0, 1, ..., max_days] array
-
-    mod = lmfit.Model(fitter)
-
-    for kwarg, (init, mini, maxi) in params_init_min_max.items():
-        mod.set_param_hint(str(kwarg), value=init, min=mini, max=maxi, vary=True)
-
-    params = mod.make_params()
-    fit_method = "leastsq"
-
-    result = mod.fit(y_data, params, method="least_squares", x=x_data)
-    #print(result.best_values)
-    result.plot_fit(datafmt="-")
-    plt.title("Fitting the model to {}'s data".format(country))
-    plt.grid(b=True, alpha=0.5)
-    plt.show()
-
-    full_days = 650
-    first_date = np.datetime64(all_data.Date.min()) - np.timedelta64(outbreak_shift,'D')
-    x_ticks = pd.date_range(start=first_date, periods=full_days, freq="D")
-
-    plotter(*Model(full_days, N_country, **result.best_values), x_ticks=x_ticks, country=country)
-
-    prediction_country = Model(full_days, N_country, **result.best_values)
-    active_cases_pred=prediction_country[2]
-
-    #calculate the daily new cases
-    daily_prediction_country=[]
-
-    for i in range(len(active_cases_pred)):
-        if i == 0:
-            daily_prediction_country.append(active_cases_pred[i])
+        #TODO: why this dont work with negative number
+        days = self.outbreak_day + len(self.data_to_fit)
+        if self.outbreak_day >= 0:
+            y_data = np.concatenate((np.zeros(self.outbreak_day), self.data_to_fit))
         else:
-            daily_prediction_country.append(active_cases_pred[i]-active_cases_pred[i-1])
+            y_data = y_data[-self.outbreak_day:]
 
-    
+        x_data = np.linspace(0, days - 1, days, dtype=int)  
 
-    #calculate the "green list point"
-    count=daily_prediction_country.index(max(daily_prediction_country)) #after max
+        #start to find the best model by try to find the parameters' best value 
+        # the method is least squares -> the square of the diffenrence between the original and the predicted data point need to be the least that will be the result
+        mod = lmfit.Model(self.fitter)
 
-    #find the first element that is above of the limit after the peak
-    while(daily_prediction_country[count] > green_list_limit and count <= len(daily_prediction_country)):
-        count+=1
+        for kwarg, (init, mini, maxi) in self.params_to_fit.items():
+            mod.set_param_hint(str(kwarg), value=init, min=mini, max=maxi, vary=True)
 
-    green_list_limit_index=count
+        params = mod.make_params()
+        #print aut the result with the original data
+        result = mod.fit(y_data, params, method="least_squares", x=x_data)
+        #print(result.best_values)
+        result.plot_fit(datafmt="-")
+        plt.title("Fitting the model to {}'s data".format(self.country))
+        plt.grid(b=True, alpha=0.5)
+        plt.show()
 
-    #figure_prob, ax_prob =plt.subplots(1,1 figsize=(20,20))
-    figure_prob=plt.figure(figsize=(20,20))
-    plt.subplots_adjust(wspace=0.2, hspace=0.5)
-    ax_prob=plt.subplot(2,1,1)
-    plt.hlines(y = green_list_limit, xmin = x_ticks[0], xmax = x_ticks[-2], color='g')
-    plt.bar(x_ticks, daily_prediction_country, width=0.5)
-    plt.title("{} predicted daily new cases".format(country))
-    plt.ylabel("daily new cases")
-    ax_prob.xaxis.set_major_locator(mdates.MonthLocator())
-    ax_prob.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    ax_prob.xaxis.set_minor_locator(mdates.MonthLocator())
-    figure_prob.autofmt_xdate()
-    plt.grid(b=True, alpha=0.5)
-    plt.xticks(rotation=45)
-    plt.ylim( ymin = 0)
-    plt.xlim(x_ticks[40], x_ticks[500])
 
-    ##zoom in
-    #figure_zoom, ax_zoom =plt.subplots(1,1 figsize=(20,20))
-    ax_zoom=plt.subplot(2,1,2)
-    plt.hlines(y = green_list_limit, xmin = x_ticks[0], xmax = x_ticks[-2], color='g')
-    plt.bar(x_ticks, daily_prediction_country, width=0.5)
-    plt.title("{} predicted daily inflected cases".format(country))
-    plt.ylabel("daily inflected cases")
-    ax_zoom.xaxis.set_major_locator(mdates.DayLocator())
-    ax_zoom.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    plt.grid(b=True, alpha=0.5)
-    plt.xticks(rotation=45)
-    plt.ylim( ymin = 0, ymax=green_list_limit+500)
-    plt.xlim(x_ticks[green_list_limit_index-3], x_ticks[green_list_limit_index+10])
-    plt.show()
+        #plots the prediction of the infection 
+        full_days = 650
+        first_date = np.datetime64(all_data.Date.min()) - np.timedelta64(self.outbreak_day,'D')
+        x_ticks = pd.date_range(start=first_date, periods=full_days, freq="D")
+        # Model(self, days, R_0_start, k, x0, R_0_end):
+        prediction_country = self.Model(full_days, **result.best_values)
+        self.plotter(*prediction_country, x_ticks=x_ticks)
 
-data_fitting_SIR ("Hungary",N_hungary,hungarian_green_list_limit, all_data.Hungary_C, 42, {"R_0_start": (1.2, 1.0, 2.0), "k": (20.0, 1.0, 100.0), "x0": (150, 100, 400), "R_0_end": (0.8, 0.5, 2.0)})
-data_fitting_SIR ("Ireland",N_ireland,irish_green_list_limit, all_data.Ireland_C, 0, {"R_0_start": (1.5, 1.2, 2.0), "k": (40.0, 1.0, 100.0), "x0": (270, 265, 400), "R_0_end": (1.1, 0.98, 2.0)})
+        #calculate the daily new cases
+        
+        active_cases_pred=prediction_country[2]
+        daily_prediction_country=[]
 
+        for i in range(len(active_cases_pred)):
+            if i == 0:
+                daily_prediction_country.append(active_cases_pred[i])
+            else:
+                daily_prediction_country.append(active_cases_pred[i]-active_cases_pred[i-1])
+
+        #calculate the "green list point for the country"
+        count=daily_prediction_country.index(max(daily_prediction_country)) #after max
+
+        #find the first element that is above of the limit after the peak
+        while(daily_prediction_country[count] > self.green_list_limit and count <= len(daily_prediction_country)):
+            count+=1
+
+        green_list_limit_index=count
+
+        #figure_prob, ax_prob =plt.subplots(1,1 figsize=(20,20))
+        figure_prob=plt.figure(figsize=(20,20))
+        plt.subplots_adjust(wspace=0.2, hspace=0.5)
+        ax_prob=plt.subplot(2,1,1)
+        plt.hlines(y = self.green_list_limit, xmin = x_ticks[0], xmax = x_ticks[-2], color='g')
+        plt.bar(x_ticks, daily_prediction_country, width=0.5)
+        plt.title("{} predicted daily new cases".format(self.country))
+        plt.ylabel("daily new cases")
+        ax_prob.xaxis.set_major_locator(mdates.MonthLocator())
+        ax_prob.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+        ax_prob.xaxis.set_minor_locator(mdates.MonthLocator())
+        figure_prob.autofmt_xdate()
+        plt.grid(b=True, alpha=0.5)
+        plt.xticks(rotation=45)
+        plt.ylim( ymin = 0)
+        plt.xlim(x_ticks[40], x_ticks[500])
+
+        ##zoom in
+        #figure_zoom, ax_zoom =plt.subplots(1,1 figsize=(20,20))
+        ax_zoom=plt.subplot(2,1,2)
+        plt.hlines(y = self.green_list_limit, xmin = x_ticks[0], xmax = x_ticks[-2], color='g')
+        plt.bar(x_ticks, daily_prediction_country, width=0.5)
+        plt.title("{} predicted daily inflected cases".format(self.country))
+        plt.ylabel("daily inflected cases")
+        ax_zoom.xaxis.set_major_locator(mdates.DayLocator())
+        ax_zoom.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+        plt.grid(b=True, alpha=0.5)
+        plt.xticks(rotation=45)
+        plt.ylim( ymin = 0, ymax=self.green_list_limit+500)
+        plt.xlim(x_ticks[green_list_limit_index-3], x_ticks[green_list_limit_index+10])
+        plt.show()
+
+
+Hungarian_modell=SIR_Fitting("Hungary",N_hungary,hungarian_green_list_limit, all_data.Hungary_C, 42, {"R_0_start": (1.2, 1.0, 2.0), "k": (20.0, 1.0, 100.0), "x0": (150, 100, 400), "R_0_end": (0.8, 0.5, 2.0)})
+Hungarian_modell.fitting_model()
+Irish_modell = SIR_Fitting("Ireland",N_ireland,irish_green_list_limit, all_data.Ireland_C, 0, {"R_0_start": (1.5, 1.2, 2.0), "k": (40.0, 1.0, 100.0), "x0": (270, 265, 400), "R_0_end": (1.1, 0.98, 2.0)})
+Irish_modell.fitting_model()
 #TODO: write down the final conclusion
 #TODO: finish the documentation in the jupyter notebook
