@@ -9,16 +9,18 @@ Or in other words: when would it be worth buying a plane ticket to visit our fam
 For this I used the "JHU CSSE COVID-19 Data" url: https://github.com/CSSEGISandData/COVID-19, 
 and these 3 articles and codes from towards data science: 
 https://towardsdatascience.com/infectious-disease-modelling-part-i-understanding-sir-28d60e29fdfc
+
 https://towardsdatascience.com/infectious-disease-modelling-beyond-the-basic-sir-model-216369c584c4
+
 https://towardsdatascience.com/infectious-disease-modelling-fit-your-model-to-coronavirus-data-2568e672dbc7
  
-The documentation of the whole project can be find there: 
+The documentation of the whole project can be find in the jupyter notebook
  
 MAIN STEPS:
  
 1. Load the JHU CSSE COVID-19 Data from the public github folder and prepare it for the further analysis
 2. Visualize and analyze Hungary and Ireland data using matplotlib pyplot
-3. Prepare the SIR model
+3. Create the SIR model (using the articles above)
 3. With a SIR model, try to predict the future cases in both countries
 4. Used this prediction to calculate the date when these two country will be on the EU Green List
 5. Write down the conclusion

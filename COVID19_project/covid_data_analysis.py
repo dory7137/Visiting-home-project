@@ -69,8 +69,11 @@ all_data=all_data.sort_values(by="Date", ignore_index=True).reset_index(drop=Tru
 all_data["Hungary_A"]=all_data["Hungary_C"]-all_data["Hungary_D"]-all_data["Hungary_R"]
 all_data["Ireland_A"]=all_data["Ireland_C"]-all_data["Ireland_D"]-all_data["Ireland_R"]
 
-hungarian_rate=100000/9773000
-irish_rate=100000/4953000
+#the N means the population of these countries
+N_hungary=9773000
+N_ireland=4953000
+hungarian_rate=100000/N_hungary
+irish_rate=100000/N_ireland
 
 def data_plotter(plt_type, splot_size, xaxis_data, first_dataset, second_dataset, fig_title, fig_ylabel, fig_legend):
     
@@ -198,10 +201,7 @@ plt.show()
 
 
 
-N_hungary=9700000
-N_ireland=4700000
-hungarian_green_list_limit=25.0 / hungarian_rate
-irish_green_list_limit=25.0 / irish_rate
+
  
 class SIR_Fitting:
 
@@ -362,9 +362,11 @@ class SIR_Fitting:
         plt.xlim(x_ticks[green_list_limit_index-3], x_ticks[green_list_limit_index+10])
         plt.show()
 
-
+hungarian_green_list_limit=25.0 / hungarian_rate
 Hungarian_modell=SIR_Fitting("Hungary",N_hungary,hungarian_green_list_limit, all_data.Hungary_C, 42, {"R_0_start": (1.2, 1.0, 2.0), "k": (20.0, 1.0, 100.0), "x0": (150, 100, 400), "R_0_end": (0.8, 0.5, 2.0)})
 Hungarian_modell.fitting_model()
+
+irish_green_list_limit=25.0 / irish_rate
 Irish_modell = SIR_Fitting("Ireland",N_ireland,irish_green_list_limit, all_data.Ireland_C, 0, {"R_0_start": (1.5, 1.2, 2.0), "k": (40.0, 1.0, 100.0), "x0": (270, 265, 400), "R_0_end": (1.1, 0.98, 2.0)})
 Irish_modell.fitting_model()
 #TODO: write down the final conclusion
